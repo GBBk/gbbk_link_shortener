@@ -27,7 +27,10 @@ export async function getCurrentUser() {
   return session.session?.user;
 }
 
-export async function signup({name, email, password, profile_pic}: {name: string, email: string, password: string, profile_pic?: string}) {
+export async function signup({name, email, password, profile_pic}: {name: string, email: string, password: string, profile_pic: File | null}) {
+  if (!profile_pic) {
+    throw new Error("Profile picture is required");
+  }
   const fileName = `dp-${name.split("").join("-")}-${Math.random()}`
   const {error: storageError} = await supabase.storage.from("profile_pic").upload(fileName, profile_pic)
 

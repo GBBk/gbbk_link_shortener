@@ -1,73 +1,66 @@
-# React + TypeScript + Vite
+# GBBK Link Shortener
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Acortador de links con códigos QR y estadísticas de cada click (ubicación y tipo de dispositivo). Cada usuario tiene su propio panel para crear, buscar y borrar links.
 
-Currently, two official plugins are available:
+**Demo:** _próximamente_
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+<!-- Agregá acá una captura del dashboard: ![Dashboard](docs/dashboard.png) -->
 
-## React Compiler
+## Funcionalidades
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Registro e inicio de sesión con Supabase Auth (con foto de perfil en Supabase Storage).
+- Links cortos con código aleatorio o alias personalizado, validado y único.
+- Código QR generado en el navegador y guardado en Storage, listo para descargar.
+- Redirección que registra ciudad, país y dispositivo de cada visita, y redirige igual aunque falle la geolocalización.
+- Estadísticas por link con gráficos de Recharts (top 5 ciudades y reparto por dispositivo).
+- Datos protegidos con Row Level Security: cada usuario solo ve y modifica sus links y estadísticas.
 
-## Expanding the ESLint configuration
+## Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Capa | Tecnologías |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite, React Router |
+| UI | Tailwind CSS 4, shadcn/ui (Radix), lucide-react, Recharts |
+| Backend | Supabase (Postgres, Auth, Storage, RLS) |
+| Calidad | ESLint, Vitest, GitHub Actions |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Cómo funciona
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. Al crear un link se valida el formulario con Yup, se genera el QR en un `<canvas>` y se sube a Storage.
+2. Se guarda el link en la tabla `urls` con un código de 6 caracteres generado con `crypto.getRandomValues`, verificando que no exista.
+3. Cuando alguien visita `/:codigo`, la app busca el link, registra el click en `clicks` y redirige al destino.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+El esquema completo con las políticas RLS está en [`supabase/schema.sql`](supabase/schema.sql).
+
+## Correrlo localmente
+
+Requisitos: Node 20 o superior y un proyecto de Supabase.
+
+```bash
+git clone https://github.com/GBBk/gbbk_link_shortener.git
+cd gbbk_link_shortener
+npm install
+cp .env.example .env   # completar con la URL y la clave pública de Supabase
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+En Supabase, ejecutá `supabase/schema.sql` en el SQL Editor y creá los buckets públicos `qrs` y `profile_pic`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+| Comando | Qué hace |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Chequeo de tipos y build de producción |
+| `npm run lint` | ESLint |
+| `npm test` | Tests unitarios con Vitest |
+
+## Deploy
+
+Incluye `vercel.json` para que las rutas como `/:codigo` funcionen al recargar. En Vercel, importá el repo y cargá las dos variables de `.env.example`.
+
+## Próximas mejoras
+
+- Redirección del lado del servidor (Edge Function) para no cargar la app antes de redirigir.
+- Vencimiento y contraseña opcionales por link.
+- Exportar estadísticas a CSV.

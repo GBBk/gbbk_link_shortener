@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect } from "react";
 import useFetch from "./hooks/useFetch";
 import { getCurrentUser } from "./db/apiAuth";
+import type { User } from "@supabase/supabase-js";
 
 interface UrlContextType {
-  user: any;
+  user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  fetchUser: () => Promise<any>;
+  fetchUser: () => Promise<User | null>;
 }
 
 const UrlContext = createContext<UrlContextType | null>(null);

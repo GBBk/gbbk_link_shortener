@@ -23,7 +23,7 @@ const Login = () => {
   })
 
   const navigate = useNavigate();
-  let [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const longLink = searchParams.get("createNew");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,7 +39,7 @@ const Login = () => {
 
   useEffect(() => {
     if (data && !error) {
-      navigate(`/dashboard${longLink ? `createNew=${longLink}` : ''}`);
+      navigate(`/dashboard${longLink ? `?createNew=${encodeURIComponent(longLink)}` : ''}`);
     }
     fetchUser();
   }, [data, error]);
@@ -61,7 +61,7 @@ const Login = () => {
       const newErrors: LoginFormErrors = {};
 
       if (error instanceof Yup.ValidationError) {
-        error.inner.forEach((err: any) => {
+        error.inner.forEach((err) => {
           newErrors[err.path as keyof LoginFormErrors] = err.message;
         });
       }

@@ -13,7 +13,7 @@ export const LandingPage = () => {
   const handleShorten = (e: React.FormEvent) => {
     e.preventDefault();
     if(!longUrl) return;
-    navigate(`/auth?createNew=${longUrl}`)
+    navigate(`/auth?createNew=${encodeURIComponent(longUrl)}`)
   }
 
   return (

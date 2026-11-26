@@ -7,6 +7,7 @@ import { deleteUrl, getUrlInfo } from "@/db/apiUrls"
 import useFetch from "@/hooks/useFetch"
 import { Copy, Download, LinkIcon, Trash } from "lucide-react"
 import { useEffect } from "react"
+import { buildShortLink } from "@/lib/links"
 import { useNavigate, useParams } from "react-router-dom"
 import { BarLoader, BeatLoader } from "react-spinners"
 import LocationStats from "@/components/LocationStats"
@@ -17,17 +18,15 @@ const Link = () => {
   const {user} = UrlState()
   const navigate = useNavigate()
 
-  const { loading, data: url, fn, error} = useFetch(getUrlInfo, {id, user_id: user?.id})
-  const { loading: loadingStats, data: stats, fn: fnStats} = useFetch(getClicksInfoForUrl, id)
+  const { loading, data: url, fn, error} = useFetch(getUrlInfo, {id, user_id: user?.id ?? ""})
+  const { loading: loadingStats, data: stats, fn: fnStats} = useFetch(getClicksInfoForUrl, id ?? "")
   const { loading: loadingDelete, fn: fnDelete} = useFetch(deleteUrl, url?.id)
 
-      const downloadImage = () => {
-        const imageUrl = url?.qr
-        const fileName = url?.title
-
+  const downloadImage = () => {
+        if (!url) return
         const anchor = document.createElement("a");
-        anchor.href = imageUrl;
-        anchor.download = fileName;
+        anchor.href = url.qr;
+        anchor.download = url.title;
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
@@ -39,14 +38,11 @@ const Link = () => {
     fnStats()
   }, [])
 
-  if(error){
-    navigate("/dashboard")
-  }
+  useEffect(() => {
+    if (error) navigate("/dashboard")
+  }, [error, navigate])
 
-  let link = ""
-  if(url) {
-    link = `https://www.gbbk.arg/${url.custom_url ? url.custom_url : url.short_url}`
-  }
+  const link = url ? buildShortLink(url) : ""
 
   return (
     <>
@@ -54,16 +50,16 @@ const Link = () => {
       <div className="flex flex-col gap-8 sm:flex-row justify-between">
         <div className="flex flex-col items-start gap-8 rounded-lg sm:w-2/5">
           <span className="text-6xl font-extrabold hover:underline cursor-pointer">{url?.title}</span>
-          <a href={link} target="_blank" className="text-3xl sm:text-4xl text-blue-400 font-bold hover:underline cursor-pointer">{link}</a>
-          <a href={url?.original_url} target="_blank" className="flex items-center gap-1 hover:underline cursor-pointer">
+          <a href={link} target="_blank" rel="noreferrer" className="text-3xl sm:text-4xl text-blue-400 font-bold hover:underline cursor-pointer">{link}</a>
+          <a href={url?.original_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:underline cursor-pointer">
             <LinkIcon className="p-1"/>
             {url?.original_url}
           </a>
-          <span className="flex items-end font-extralight text-sm">{new Date(url?.created_at).toLocaleString()}</span>
+          <span className="flex items-end font-extralight text-sm">{url ? new Date(url.created_at).toLocaleString() : ""}</span>
           <div className="flex gap-2">
-              <Button variant="ghost" onClick={()=> navigator.clipboard.writeText(`https://wwww.gbbk.arg/${url?.short_url}`)}><Copy /></Button>
+              <Button variant="ghost" onClick={()=> navigator.clipboard.writeText(link)}><Copy /></Button>
               <Button variant="ghost" onClick={downloadImage}><Download /></Button>
-              <Button variant="ghost" onClick={()=>fnDelete()}>
+              <Button variant="ghost" onClick={()=>fnDelete().then(() => navigate("/dashboard"))}>
                   {
                       loadingDelete ? <BeatLoader size={5} color="#ffffff" /> : <Trash />
                   }

@@ -46,13 +46,13 @@ const CreateLink = () => {
         })
     }
 
-    const { loading, error, data, fn: fnCreateUrl} = useFetch(createUrl, {...formValues, user_id: user?.id})
+    const { loading, error, data, fn: fnCreateUrl} = useFetch(createUrl, {...formValues, user_id: user?.id ?? ""})
 
     useEffect(() => {
         if(error === null && data) {
             navigate(`/link/${data[0].id}`)
         }
-    },[error,data])
+    },[error, data, navigate])
 
    const createNewLink = async () => {
         setErrors({
@@ -62,18 +62,20 @@ const CreateLink = () => {
         })
         try {
             await schema.validate(formValues, { abortEarly: false });
-            const canvas = (ref.current as any)?.canvasRef?.current;
-            const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b: Blob | null) => resolve(b)));
+            const canvas = (ref.current as unknown as { canvasRef?: React.RefObject<HTMLCanvasElement> })?.canvasRef?.current;
+            const blob = canvas
+                ? await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b)))
+                : null;
             await fnCreateUrl(blob);
         } catch (error) {
-            const newErrors = {} as any;
+            const newErrors: Record<string, string> = {};
             if (error instanceof yup.ValidationError) {
                 error.inner.forEach((err) => {
                     if (err.path) {
                         newErrors[err.path] = err.message
                     }
                 });
-                setErrors(newErrors);
+                setErrors({ title: "", longUrl: "", customUrl: "", ...newErrors });
             }
         }    
     }
@@ -93,7 +95,7 @@ const CreateLink = () => {
                 <Input id="longUrl" placeholder="Enter your long URL" value={formValues.longUrl} onChange={handleChange}/>
                 {errors.longUrl && <Error message={errors.longUrl as string} />}
                 <div className="flex items-center gap-2">
-                    <Card className="p-2">gbbk.arg</Card> /
+                    <Card className="p-2">{window.location.host}</Card> /
                     <Input id="customUrl" placeholder="Custom Link (optional)" value={formValues.customUrl} onChange={handleChange}/>
                 </div>
                 {error && <Error message={error.message} />}

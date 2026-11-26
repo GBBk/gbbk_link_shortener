@@ -1,23 +1,17 @@
 import { useState } from "react";
 
-type FetchCallback<TData, TOptions, TArgs extends any[]> = (
+type FetchCallback<TData, TOptions, TArgs extends unknown[]> = (
   options: TOptions,
   ...args: TArgs
 ) => Promise<TData>;
 
-interface ApiError {
-  error: string;
-  message?: string;
-  status?: number;
-}
-
-function useFetch<TData, TOptions = undefined, TArgs extends any[] = []>(
+function useFetch<TData, TOptions = undefined, TArgs extends unknown[] = []>(
   cb: FetchCallback<TData, TOptions, TArgs>,
   options?: TOptions
 ) {
   const [data, setData] = useState<TData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<ApiError | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const fn = async (...args: TArgs) => {
     setLoading(true);
@@ -26,9 +20,9 @@ function useFetch<TData, TOptions = undefined, TArgs extends any[] = []>(
       const response = await cb(options as TOptions, ...args);
       setData(response);
       return response;
-    } catch (error: string | any) {
-      setError(error || "An error occurred");
-      throw error;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("An error occurred"));
+      throw err;
     } finally {
       setLoading(false);
     }
