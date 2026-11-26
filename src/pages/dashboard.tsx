@@ -15,9 +15,9 @@ const Dashboard = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = UrlState();
-  const { data: urls, loading, error, fn: fnUrls } = useFetch(getUrls, user?.id)
+  const { data: urls, loading, error, fn: fnUrls } = useFetch(getUrls, user?.id ?? "")
 
-  const {loading: loadingClicks, data: clicks, fn: fnClicks } = useFetch(getClicksForUrls, urls?.map(url => url.id));
+  const {loading: loadingClicks, data: clicks, fn: fnClicks } = useFetch(getClicksForUrls, urls?.map(url => url.id) ?? []);
 
   useEffect(() => {
     fnUrls()
@@ -29,12 +29,12 @@ const Dashboard = () => {
       }
   }, [urls?.length]);
 
-  const filteredUrls = urls?.filter((url: any) => url.title.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredUrls = urls?.filter((url) => url.title.toLowerCase().includes(searchQuery.toLowerCase()))
 
   return (
     <div className="flex flex-col gap-8">
       {
-        loading || loadingClicks && <BarLoader width={"100%"} color="#36d7b7" />
+        (loading || loadingClicks) && <BarLoader width={"100%"} color="#36d7b7" />
       }
       <div className="grid grid-cols-2 gap-4">
         <Card>
@@ -70,8 +70,8 @@ const Dashboard = () => {
         <Filter className="absolute right-2 top-2 p-1" />
       </div>
       {error && <Error message={error?.message} />}
-      {(filteredUrls || []).map((url: any, index: number) => (
-        <LinksCard key={index} url={url} fetchUrls={fnUrls} />
+      {(filteredUrls || []).map((url) => (
+        <LinksCard key={url.id} url={url} fetchUrls={fnUrls} />
       ))}
     </div>
   )

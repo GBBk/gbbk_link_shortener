@@ -1,43 +1,46 @@
 import { storeClicks } from "@/db/apiClicks"
 import { getLongUrl } from "@/db/apiUrls"
-import useFetch from "@/hooks/useFetch"
-import { useEffect } from "react"
-import { useParams } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Link, useParams } from "react-router-dom"
 import { BarLoader } from "react-spinners"
-
 
 const RedirectLink = () => {
   const { id } = useParams()
-
-  const {loading, data, fn} = useFetch(getLongUrl, id)
-
-  const { loading: loadingStats, fn: fnStats } = useFetch(storeClicks, {
-    id: data?.id,
-    originalUrl: data?.original_url
-  })
+  const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
-    fn();
-  }, [])
+    if (!id) return
+    let cancelled = false
 
-  useEffect(() => {
-    if(!loading && data) {
-      fnStats();
+    getLongUrl(id)
+      .then((url) => {
+        if (!cancelled) return storeClicks({ id: url.id, originalUrl: url.original_url })
+      })
+      .catch(() => {
+        if (!cancelled) setNotFound(true)
+      })
+
+    return () => {
+      cancelled = true
     }
-  }, [loading])
+  }, [id])
 
-  if (loading || loadingStats) {
+  if (notFound) {
     return (
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <h1 className="text-4xl font-extrabold">Link not found</h1>
+        <p>This short link doesn't exist or was deleted.</p>
+        <Link to="/" className="text-blue-400 hover:underline">Go to home page</Link>
+      </div>
+    )
+  }
+
+  return (
     <>
-      <BarLoader width={"100%"} color="#36d7b7"/>
+      <BarLoader width={"100%"} color="#36d7b7" />
       <br />
       Redirecting...
     </>
-    )
-  } 
-
-  return (
-    <div>redirect-link</div>
   )
 }
 
